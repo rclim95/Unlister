@@ -1,0 +1,61 @@
+.pt-25vh {
+    padding-top: 25vh;
+}
+
+#btn-dropdown-menu {
+    min-width: 10vw;
+}
+
+.centered-text {
+    text-align: center;
+    max-width: 40vw;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-gap: 1em;
+}
+
+@media screen and (min-width: 576px /** sm **/) {
+    #form-playlist-url {
+        width: 75%;
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-gap: 1em;
+    }
+}
+
+@media screen and (min-width: 1200px /** lg **/) {
+    .cards {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.slide-enter-active,
+.slide-leave-active {
+    transition: all 0.5s ease-in-out;
+}
+
+.slide-enter-from {
+    opacity: 0;
+    transform: translateX(-50px);
+}
+
+.slide-leave-to {
+    opacity: 0;
+    transform: translateX(50px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.5s ease-in-out;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}

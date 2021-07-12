@@ -2,6 +2,7 @@
 from datetime import datetime
 
 from flask import Blueprint, jsonify, request, current_app
+from googleapiclient.errors import HttpError
 from unlister.yt import youtube_client, Video
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -25,33 +26,54 @@ def get_unlisted_videos(playlist_id):
             "\"%s\" could be not parsed into \"%%Y-%%m-%%d\" format. Ignoring.", before_date_arg)
         before_date = None
 
+    try:
+        # Get the playlist items from the playlist provided.
+        # See: https://developers.google.com/youtube/v3/docs/playlistItems/list
+        yt = youtube_client()
+        yt_request = yt.playlistItems().list(playlistId=playlist_id, part="snippet,status")
+        results = []
 
-    # Get the playlist items from the playlist provided.
-    # See: https://developers.google.com/youtube/v3/docs/playlistItems/list
-    yt = youtube_client()
-    yt_request = yt.playlistItems().list(playlistId=playlist_id, part="snippet,status")
-    results = []
+        # Go through each paginated response in the playlist...
+        while yt_request:
+            # Execute our request.
+            yt_response = yt_request.execute()
 
-    # Go through each paginated response in the playlist...
-    while yt_request:
-        # Execute our request.
-        yt_response = yt_request.execute()
+            # And record the privacy status and some information about the video we're interested in
+            for playlist_item in yt_response.get("items", []):
+                video = Video.from_playlist_item(playlist_item)
+                if video is None:
+                    # This video couldn't be parsed.
+                    continue
 
-        # And record the privacy status and some information about the video we're interested in.
-        for playlist_item in yt_response.get("items", []):
-            video = Video.from_playlist_item(playlist_item)
-            if video is None:
-                # This video couldn't be parsed.
-                continue
+                # Apply our filter, if we have some.
+                if video.privacy.value in privacy_filter and \
+                (before_date is None or video.published <= before_date):
+                    results.append(video.as_json() | {
+                        "published_friendly": video.published.strftime("%Y-%m-%d %H:%M:%S")
+                    })
 
-            # Apply our filter, if we have some.
-            if video.privacy.value in privacy_filter and \
-               (before_date is None or video.published <= before_date):
-                results.append(video.as_json() | {
-                    "published_friendly": video.published.strftime("%Y-%m-%d %H:%M:%S")
-                })
+            # Move on to the next page :)
+            yt_request = yt.playlistItems().list_next(yt_request, yt_response)
 
-        # Move on to the next page :)
-        yt_request = yt.playlistItems().list_next(yt_request, yt_response)
+        return jsonify(results)
+    except Exception as ex:
+        current_app.logger.error(
+            "Unable to get unlisted videos from YouTube playlist ID \"%s\"",
+            playlist_id,
+            exc_info=True
+        )
 
-    return jsonify(results)
+        # Is this a HttpError?
+        if isinstance(ex, HttpError):
+            if ex.status_code == 404:
+                # The YouTube playlist ID specified is invalid.
+                return (jsonify({
+                    "error": "The playlist could not be found"
+                }), 404)
+
+        # Otherwise, assume it's an application error.
+        return (jsonify({
+            "error": str(ex)
+        }), 500)
+
+
