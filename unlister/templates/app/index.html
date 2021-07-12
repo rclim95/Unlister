@@ -1,0 +1,210 @@
+{% extends "shared/layout.html" %}
+{% block title %}Welcome{% endblock %}
+{% block head %}
+{{ super() }}
+<style type="text/css">
+    main {
+        width: 75%;
+    }
+
+    @media screen and (min-width: 992px  /** lg **/) {
+        main {
+            width: 50%;
+        }
+    }
+
+    .slide-enter-active,
+    .slide-leave-active {
+        transition: all 0.5s ease-in-out;
+    }
+
+    .slide-leave-to {
+        opacity: 0;
+        transform: translateX(25%);
+    }
+
+    .slide-enter-from {
+        opacity: 0;
+        transform: translateX(-25%);
+    }
+</style>
+{% endblock %}
+{% block body %}
+<main id="app">
+    <transition name="slide" mode="out-in">
+        <component v-bind:is="pageComponent" v-bind:app="this"></component>
+    </transition>
+</main>
+<script type="text/x-template" id="page-home">
+    <div style="padding-top: 25vh">
+        <h1 class="display-4 text-center">Welcome</h1>
+        <p class="lead">
+            Need to find out which videos in a YouTube playlist is <em>Unlisted</em> before
+            July 23, 2021, the day <a href="https://support.google.com/youtube/answer/9230970?hl=en">
+            YouTube will mark all unlisted videos uploaded before 2017 as <em>Private</em></a>? Unlister can help!
+        </p>
+        <p class="lead">
+            To begin, enter the URL to a YouTube playlist that may (or may not) contain some unlisted
+            videos and press <strong>Find Unlisted Videos</strong>. We'll let you know if we found some
+            unlisted videos that you may want to take action on before the deadline.
+        </p>
+        <form class="mt-4" v-on:submit.prevent="findUnlistedVideos">
+            <fieldset v-bind:disabled="isFinding">
+                <div class="input-group input-group-lg" v-bind:class="{ 'has-validation': !isUrlValid }">
+                    <input type="url" class="form-control" id="text-playlist-url" required
+                        placeholder="https://www.youtube.com/playlist?list=PLFsQleAWXsj_4yDeebiIADdH5FMayBiJo"
+                        aria-label="YouTube Playlist URL"
+                        aria-describedby="btn-find"
+                        v-model="playlistUrl"
+                        v-bind:class="{ 'is-invalid': playlistUrl !== '' && !isUrlValid, 'is-valid': isUrlValid }" />
+                    <button class="btn btn-primary" type="submit" id="btn-find"
+                            v-bind:disabled="!isUrlValid">
+                        <span v-if="isFinding">
+                            <i class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></i>
+                            Finding Videos...
+                        </span>
+                        <span v-else>
+                            Find Unlisted Videos
+                        </span>
+                    </button>
+                    <div v-if="!isUrlValid" class="invalid-feedback">
+                        Please enter a URL to a YouTube playlist.
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</script>
+<script type="text/x-template" id="page-results">
+    <div class="mt-3">
+        <h1 class="display-4 text-center">${ videoCount } need your attention</h1>
+        <p class="lead">
+            These <em>Unlisted</em> videos were uploaded before 2017 and will be marked as <em>Private</em>
+            if the video creator doesn't take action before July 23, 2021.
+        </p>
+        <div class="list-group">
+            <a v-for="video in unlistedVideos" v-bind:key="video.id" v-bind:href="video.url"
+               class="list-group-item list-group-item-action" target="_blank">
+                <div class="d-flex w-100">
+                    <img v-bind:src="video.thumbnail" v-bind:alt="'Video Thumbnail of &quot;' + video.title + '&quot;'" />
+                    <div class="flex-grow-1 ms-2">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="mb-1">${ video.title }</h5>
+                            <small>${ video.published_friendly }</small>
+                        </div>
+                        <p class="mb-0">by ${ video.uploader }</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</script>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    const emitter = mitt();
+    const app = Vue.createApp({
+        data: function () {
+            return {
+                page: "home",
+                playlistUrl: null,
+                unlistedVideos: []
+            }
+        },
+        computed: {
+            pageComponent: function () {
+                return "page-" + this.page;
+            }
+        },
+        created: function () {
+            emitter.on("results", videos => {
+                for (let video of videos) {
+                    this.unlistedVideos.push(video);
+                }
+
+                this.page = "results";
+            });
+        }
+    });
+    app.component("page-home", {
+        template: "#page-home",
+        props: [ "app" ],
+        data: function () {
+            return {
+                playlistUrl: "",
+                isFinding: false
+            }
+        },
+        computed: {
+            isUrlValid: function () {
+                if (this.playlistUrl === "") {
+                    return false;
+                }
+
+                try {
+                    var potentialUrl = new URL(this.playlistUrl);
+                    if (potentialUrl.hostname !== "www.youtube.com") {
+                        return false;
+                    }
+
+                    if (!potentialUrl.pathname.includes("playlist")) {
+                        return false;
+                    }
+
+                    if (!potentialUrl.searchParams.has("list")) {
+                        return false;
+                    }
+
+                    return true;
+                }
+                catch (error) {
+                    // This is not a parsable URL.
+                    return false;
+                }
+            }
+        },
+        methods: {
+            findUnlistedVideos: function () {
+                this.isFinding = true;
+
+                // Extract the playlist ID from the playlist URL
+                let playlistUrl = new URL(this.playlistUrl);
+                let playlistID = playlistUrl.searchParams.get("list");
+
+                window.fetch(
+                    $SCRIPT_ROOT + "/api/playlist/" + playlistID,
+                    { method: "POST" })
+                    .then(resp => resp.json())
+                    .then(json => {
+                        emitter.emit("results", json);
+                    });
+            }
+        }
+    });
+    app.component("page-results", {
+        template: "#page-results",
+        props: [ "app" ],
+        data: function () {
+            return {
+                unlistedVideos: []
+            }
+        },
+        computed: {
+            videoCount: function () {
+                if (this.unlistedVideos.length == 1) {
+                    return "1 video";
+                }
+                else {
+                    return `${this.unlistedVideos.length} videos`;
+                }
+            }
+        },
+        mounted: function () {
+            this.unlistedVideos = this.app.unlistedVideos;
+        }
+    });
+    app.config.compilerOptions.delimiters = ["${", "}"];
+    app.mount("#app");
+</script>
+{% endblock %}
