@@ -51,7 +51,8 @@ def get_unlisted_videos(playlist_id):
                 # Apply our filter, if we have some.
                 if video.privacy.value in privacy_filter and \
                 (before_date is None or video.published <= before_date):
-                    results.append(video.as_json() | {
+                    results.append({
+                        **video.as_json(),
                         "published_friendly": video.published.strftime("%Y-%m-%d %H:%M:%S")
                     })
 
