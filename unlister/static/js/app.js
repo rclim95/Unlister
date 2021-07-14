@@ -78,7 +78,7 @@ const ResultPage = {
                 this.videos.map(video => `${video.title} - ${video.url}`).join("\n")
             ], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
-            download(url, "Playlist.txt");
+            download(url, this.$route.params.playlistId + ".txt");
             URL.revokeObjectURL(url);
         }
     },

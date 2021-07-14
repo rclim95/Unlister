@@ -75,5 +75,3 @@ def get_unlisted_videos(playlist_id):
         return (jsonify({
             "error": str(ex)
         }), 500)
-
-
