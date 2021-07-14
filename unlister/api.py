@@ -30,7 +30,10 @@ def get_unlisted_videos(playlist_id):
         # Get the playlist items from the playlist provided.
         # See: https://developers.google.com/youtube/v3/docs/playlistItems/list
         yt = youtube_client()
-        yt_request = yt.playlistItems().list(playlistId=playlist_id, part="snippet,status")
+        yt_request = yt.playlistItems().list(
+            playlistId=playlist_id,
+            part="snippet,status,contentDetails",
+            maxResults=50)
         results = []
 
         # Go through each paginated response in the playlist...
@@ -66,9 +69,9 @@ def get_unlisted_videos(playlist_id):
         # Is this a HttpError?
         if isinstance(ex, HttpError):
             if ex.status_code == 404:
-                # The YouTube playlist ID specified is invalid.
+                # The YouTube playlist ID specified is invalid or is private.
                 return (jsonify({
-                    "error": "The playlist could not be found"
+                    "error": "The playlist could not be found or is private."
                 }), 404)
 
         # Otherwise, assume it's an application error.

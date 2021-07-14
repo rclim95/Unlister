@@ -77,7 +77,8 @@ class Video:
                 # YouTube's ISO8601 datetime format has a "Z" at the end, which Python doesn't
                 # support. Therefore, strip out the "Z" so that the datetime is parsable via
                 # datetime.fromisoformat.
-                published=datetime.fromisoformat(value["snippet"]["publishedAt"].rstrip("Z")),
+                published=None if privacy == VideoPrivacyStatus.PRIVATE else
+                    datetime.fromisoformat(value["contentDetails"]["videoPublishedAt"].rstrip("Z")),
                 thumbnail=None if privacy == VideoPrivacyStatus.PRIVATE else
                     value["snippet"]["thumbnails"]["default"]["url"],
                 uploader=None if privacy == VideoPrivacyStatus.PRIVATE else
@@ -85,11 +86,12 @@ class Video:
                 uploader_url=None if privacy == VideoPrivacyStatus.PRIVATE else
                     "https://www.youtube.com/channel/{}".format(
                         value["snippet"]["videoOwnerChannelId"]),
-                url="https://www.youtube.com/watch?v={}".format(value["snippet"]["resourceId"]["videoId"])
+                url="https://www.youtube.com/watch?v={}".format(
+                        value["snippet"]["resourceId"]["videoId"])
             )
         except Exception: # pylint: disable=broad-except
             # We can't parse it. :(
-            LOGGER.error("Unable to parse the provided JSON: %s", value)
+            LOGGER.error("Unable to parse the provided JSON: %s", value, exc_info=True)
             return None
 
 def youtube_client() -> Resource:
