@@ -59,7 +59,7 @@ def get_unlisted_videos(playlist_id):
             yt_request = yt.playlistItems().list_next(yt_request, yt_response)
 
         return jsonify(results)
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-except
         current_app.logger.error(
             "Unable to get unlisted videos from YouTube playlist ID \"%s\"",
             playlist_id,
@@ -68,7 +68,7 @@ def get_unlisted_videos(playlist_id):
 
         # Is this a HttpError?
         if isinstance(ex, HttpError):
-            if ex.status_code == 404:
+            if ex.status_code == 404: # pylint: disable=no-member
                 # The YouTube playlist ID specified is invalid or is private.
                 return (jsonify({
                     "error": "The playlist could not be found or is private."
