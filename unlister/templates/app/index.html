@@ -13,21 +13,19 @@
         <nav class="navbar navbar-light bg-light sticky-top py-3 shadow-sm border-bottom">
             <div class="container-sm">
                 <router-link v-bind:to="{ name: 'home' }" class="navbar-brand order-0">Unlister</router-link>
-                <form class="d-flex flex-grow-1 order-2 order-sm-1 mt-3 mt-sm-0 me-0 me-sm-3" id="form-playlist-url" v-on:submit.prevent="findUnlistedVideos">
-                    <input class="form-control me-2" type="url" placeholder="YouTube Playlist URL" aria-label="YouTube Playlist URL" required
+                <div class="w-100 d-block d-md-none order-2"></div>
+                <form class="d-flex flex-grow-1 order-3 order-md-1 mt-3 mt-md-0 me-0 me-md-3" id="form-playlist-url" v-on:submit.prevent="findUnlistedVideos">
+                    <input class="form-control me-2 w-auto flex-fill" type="url" placeholder="YouTube Playlist URL" aria-label="YouTube Playlist URL" required
                            v-model="playlistUrl"
                            v-bind:class="{ 'is-valid': isUrlValid, 'is-invalid': !isUrlValid }" />
                     <button class="btn btn-outline-primary" type="submit" v-bind:disabled="!isUrlValid">
-                        <span class="d-sm-none">
-                            <i class="fas fa-search" role="img"></i>
-                            <span class="visually-hidden">Find Unlisted Video</span>
-                        </span>
-                        <span class="d-none d-sm-block">
-                            Find&nbsp;Unlisted&nbsp;Videos
+                        <i class="fas fa-search" role="img"></i>
+                        <span class="d-none d-lg-inline">
+                            Find Unlisted Videos
                         </span>
                     </button>
                 </form>
-                <div class="dropdown order-1 order-sm-2">
+                <div class="dropdown order-1 order-md-2">
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="btn-dropdown-help"
                             data-bs-toggle="dropdown" aria-expanded="fales">
                         <i class="fas fa-info-circle"></i>
