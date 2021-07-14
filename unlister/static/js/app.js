@@ -122,7 +122,7 @@ const App = Vue.createApp({
 
             try {
                 var potentialUrl = new URL(this.playlistUrl);
-                if (potentialUrl.hostname !== "www.youtube.com") {
+                if (!potentialUrl.hostname.includes("youtube.com")) {
                     return false;
                 }
 
