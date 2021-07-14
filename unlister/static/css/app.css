@@ -1,14 +1,9 @@
-.pt-25vh {
-    padding-top: 25vh;
-}
-
 #btn-dropdown-menu {
     min-width: 10vw;
 }
 
 .centered-text {
     text-align: center;
-    max-width: 40vw;
 }
 
 .cards {
@@ -18,6 +13,10 @@
 }
 
 @media screen and (min-width: 576px /** sm **/) {
+    .pt-sm-15vh {
+        padding-top: 15vh;
+    }
+
     #form-playlist-url {
         width: 75%;
     }
@@ -26,6 +25,10 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         grid-gap: 1em;
+    }
+
+    .centered-text {
+        width: 50%;
     }
 }
 
